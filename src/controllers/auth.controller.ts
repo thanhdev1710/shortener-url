@@ -43,8 +43,8 @@ export const refreshToken = CatchAsync(async (c) => {
   // set cookie mới
   setCookie(c, "accessToken", newAccessToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
+    secure: false,
+    sameSite: "None",
     path: "/",
     maxAge: 60 * 15,
   });
@@ -178,16 +178,16 @@ export const googleLogin = CatchAsync(async (c) => {
 
   setCookie(c, "accessToken", accessToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
+    secure: false,
+    sameSite: "None",
     path: "/",
     maxAge: 60 * 15,
   });
 
   setCookie(c, "refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true,
-    sameSite: "Lax",
+    secure: false,
+    sameSite: "None",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });

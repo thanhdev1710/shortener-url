@@ -18,28 +18,28 @@ import { redirect } from "./controllers/url.controller";
 const app = new Hono();
 
 // Logger
-app.use("*", logger());
+app.use(logger());
 
-app.use("*", poweredBy({ serverName: "Shortener-URL-API" }));
+app.use(poweredBy({ serverName: "Shortener-URL-API" }));
 
 // Security headers
-app.use("*", secureHeaders());
+app.use(secureHeaders());
 
 // CORS (chỉnh domain FE của ông)
 app.use(
-  "*",
   cors({
-    origin: ["https://your-frontend.vercel.app"],
+    origin: ["http://localhost:3000"],
     allowMethods: ["GET", "POST", "PATCH", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 
 // Body limit (chống spam payload lớn)
-app.use("*", bodyLimit({ maxSize: 1024 * 1024 })); // 1MB
+app.use(bodyLimit({ maxSize: 1024 * 1024 })); // 1MB
 
 // Timeout (tránh treo worker)
-app.use("*", timeout(10_000)); // 10s
+app.use(timeout(10_000)); // 10s
 
 /* PUBLIC ROUTE */
 app.get("/:shortCode", redirect);
