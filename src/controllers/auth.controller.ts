@@ -3,23 +3,19 @@ import { users } from "../db/schema";
 import { getDb } from "../lib/db";
 import { CatchAsync } from "../utils/CatchAsync";
 import { jwtSign, jwtVerify } from "../lib/jwt";
-import { getCookie, setCookie } from "hono/cookie";
 
 /* ================= REFRESH TOKEN ================= */
 
 export const refreshToken = CatchAsync(async (c) => {
   const body = await c.req.json().catch(() => ({}));
 
-  const refreshTokenBody = body.refreshToken;
-  const refreshTokenCookie = getCookie(c, "refreshToken");
+  const refreshToken = body.refreshToken;
 
-  const token = refreshTokenBody || refreshTokenCookie;
-
-  if (!token) {
+  if (!refreshToken) {
     return c.json({ success: false, message: "Refresh token required" }, 400);
   }
 
-  const payload = await jwtVerify(token, c.env.JWT_SECRET);
+  const payload = await jwtVerify(refreshToken, c.env.JWT_SECRET);
 
   const db = getDb(c.env.DATABASE_URL);
 
@@ -30,7 +26,7 @@ export const refreshToken = CatchAsync(async (c) => {
     .limit(1)
     .then((res) => res[0]);
 
-  if (!user || user.refreshToken !== token) {
+  if (!user || user.refreshToken !== refreshToken) {
     return c.json({ success: false, message: "Invalid refresh token" }, 401);
   }
 
@@ -40,15 +36,6 @@ export const refreshToken = CatchAsync(async (c) => {
     c.env.JWT_SECRET
   );
 
-  // set cookie mới
-  setCookie(c, "accessToken", newAccessToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "None",
-    path: "/",
-    maxAge: 60 * 15,
-  });
-
   return c.json({
     success: true,
     accessToken: newAccessToken,
@@ -56,20 +43,16 @@ export const refreshToken = CatchAsync(async (c) => {
 });
 
 /* ================= LOGOUT ================= */
-
 export const logout = CatchAsync(async (c) => {
   const body = await c.req.json().catch(() => ({}));
 
-  const refreshTokenBody = body.refreshToken;
-  const refreshTokenCookie = getCookie(c, "refreshToken");
+  const refreshToken = body.refreshToken;
 
-  const token = refreshTokenBody || refreshTokenCookie;
-
-  if (!token) {
+  if (!refreshToken) {
     return c.json({ success: false, message: "Refresh token required" }, 400);
   }
 
-  const payload = await jwtVerify(token, c.env.JWT_SECRET);
+  const payload = await jwtVerify(refreshToken, c.env.JWT_SECRET);
 
   const db = getDb(c.env.DATABASE_URL);
 
@@ -78,10 +61,6 @@ export const logout = CatchAsync(async (c) => {
     .set({ refreshToken: null })
     .where(eq(users.id, Number(payload.sub)));
 
-  // xóa cookie
-  setCookie(c, "accessToken", "", { maxAge: 0 });
-  setCookie(c, "refreshToken", "", { maxAge: 0 });
-
   return c.json({
     success: true,
     message: "Logged out",
@@ -89,7 +68,6 @@ export const logout = CatchAsync(async (c) => {
 });
 
 /* ================= GOOGLE OAUTH ================= */
-
 export const googleLogin = CatchAsync(async (c) => {
   const { idToken } = await c.req.json();
 
@@ -135,7 +113,6 @@ export const googleLogin = CatchAsync(async (c) => {
     .then((res) => res[0]);
 
   if (!user) {
-    // nếu đã tồn tại email nhưng chưa có googleId, cập nhật để liên kết
     user = await db
       .select()
       .from(users)
@@ -168,6 +145,7 @@ export const googleLogin = CatchAsync(async (c) => {
     60 * 15,
     c.env.JWT_SECRET
   );
+
   const refreshToken = await jwtSign(
     { sub: user.id },
     60 * 60 * 24 * 7,
@@ -176,24 +154,10 @@ export const googleLogin = CatchAsync(async (c) => {
 
   await db.update(users).set({ refreshToken }).where(eq(users.id, user.id));
 
-  setCookie(c, "accessToken", accessToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "None",
-    path: "/",
-    maxAge: 60 * 15,
-  });
-
-  setCookie(c, "refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: false,
-    sameSite: "None",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
-
   return c.json({
     success: true,
+    accessToken,
+    refreshToken,
     user: {
       id: user.id,
       email: user.email,

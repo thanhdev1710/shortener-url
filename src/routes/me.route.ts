@@ -7,7 +7,7 @@ import { jwtMiddleware } from "../lib/jwt";
 import { CatchAsync } from "../utils/CatchAsync";
 import { getDb } from "../lib/db";
 import { eq, sql } from "drizzle-orm";
-import { users, urls } from "../db/schema";
+import { urls } from "../db/schema";
 
 const meRouter = new Hono();
 
@@ -16,25 +16,9 @@ meRouter.use(jwtMiddleware);
 meRouter.get(
   "/",
   CatchAsync(async (c) => {
-    const userId = c.get("userId");
-    const db = getDb(c.env.DATABASE_URL);
-
-    const user = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        name: users.name,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1)
-      .then((res) => res[0]);
-
     return c.json({
-      user,
       success: true,
-      message: "User info",
+      message: "Success",
     });
   })
 );

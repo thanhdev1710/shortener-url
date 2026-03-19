@@ -40,10 +40,12 @@ export const jwtMiddleware = CatchAsync(async (c, next) => {
   const authHeader = c.req.header("Authorization");
   const tokenCookie = getCookie(c, "accessToken");
 
-  // ưu tiên header trước
+  // 👉 ƯU TIÊN header trước (chuẩn REST)
   if (authHeader?.startsWith("Bearer ")) {
     token = authHeader.split(" ")[1];
-  } else if (tokenCookie) {
+  }
+  // 👉 fallback cookie
+  else if (tokenCookie) {
     token = tokenCookie;
   }
 
@@ -60,7 +62,7 @@ export const jwtMiddleware = CatchAsync(async (c, next) => {
   try {
     const payload = await jwtVerify(token, c.env.JWT_SECRET);
 
-    // lưu user vào context
+    // 👉 lưu user vào context
     c.set("userId", Number(payload.sub));
 
     await next();

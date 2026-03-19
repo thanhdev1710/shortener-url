@@ -28,7 +28,7 @@ app.use(secureHeaders());
 // CORS (chỉnh domain FE của ông)
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: ["https://localhost:3000", "https://shortener-url-fe.vercel.app"],
     allowMethods: ["GET", "POST", "PATCH", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
